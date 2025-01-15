@@ -1,0 +1,17 @@
+
+services:
+  postgres:
+    image: postgres
+    command: -c fsync=off -c full_page_writes=off
+    restart: on-failure
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 1s
+      timeout: 1s
+      retries: 60

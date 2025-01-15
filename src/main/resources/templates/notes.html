@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Список напоминаний</title>
+</head>
+<body>
+    <p>Заметки</p>
+    <table border="1">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Remind</th>
+            <th>User_Id</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Цикл по списку напоминаний -->
+        <tr th:each="note : ${allNotes}">
+            <td th:text="${note.id}" ></td>
+            <td th:text="${note.title}" width="100"></td>
+            <td th:text="${note.description}" width="300"></td>
+            <td th:text="${note.remind}"></td>
+            <td th:text="${note.userId}"></td>
+            <td>
+                <!-- Ссылка на страницу пользователя с передачей userId -->
+                <a th:href="@{/reminder/{userId}(userId=${note.userId})}">View Note</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <!--<a th:href="/api/v1/reminder/create/()">Создать заметку</a>-->
+    <div>
+        <p>Создать заметку</p>
+        <form action="/api/v1/reminder/create/" target="_self" method="post">
+            <label>Введите название</label>
+            <input type="text" name="title">
+            <label>Введите содержание</label>
+            <input type="text" name="description" >
+            <label>Выберите дату и время</label>
+            <input type="datetime-local" name="remind">
+            <button type="submit">Создать</button>
+        </form>
+    </div>
+</body>
+</html>
