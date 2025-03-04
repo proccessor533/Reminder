@@ -1,14 +1,21 @@
 package my.dapi.reminder.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "notes")
 public class Note {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "note_id_seq", sequenceName = "notes_id_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "note_id_seq")
     private Long id;
 
     @Column(name = "title")
@@ -23,53 +30,10 @@ public class Note {
     @Column(name = "user_id")
     private Long userId;
 
-    public Note() {}
-
-    public Note(Long id, String title, String description, Timestamp remind, Long userId) {
-        this.id = id;
+    public Note(String title, String description, Timestamp remind, Long userId) {
         this.title = title;
         this.description = description;
         this.remind = remind;
-        this.userId = userId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Timestamp getRemind() {
-        return remind;
-    }
-
-    public void setRemind(Timestamp remind) {
-        this.remind = remind;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
         this.userId = userId;
     }
 
