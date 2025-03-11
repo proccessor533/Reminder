@@ -15,9 +15,9 @@ public class UsersService {
 
     // Аутентификация пользователя
     public Long passcheck(String login, String pass) {
-        User userch = userRepository.findByUsername(login);  // TODO обработка ошибок
-        if (userch.getPassword().equals(pass)) {
-            return userch.getId();
+        User user = userRepository.findByUsername(login);  // TODO обработка ошибок
+        if (user.getPassword().equals(pass)) {
+            return user.getId();
         } else {
             return -1L;
         }

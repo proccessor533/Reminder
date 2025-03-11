@@ -1,87 +1,133 @@
 package my.dapi.reminder.controller;
 
 
+import lombok.Getter;
+import lombok.Setter;
 import my.dapi.reminder.entity.Note;
 import my.dapi.reminder.services.NotesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
-import java.util.List;
+import java.util.*;
 
 @Controller
 public class UserController {
     @Autowired
     private NotesService notesService;
-    @Autowired
-    private AuthController authController; //todo можно не инжектить
 
-    private Long userId; // запихнуть сюда юзер id
-
-    // Список всех заметок
-    @GetMapping("/api/v1/reminder/all")
-    public String allUsersNotes(Model model) {
-        List<Note> allNotes = notesService.getAll();
-        System.out.println(allNotes);
-        model.addAttribute("allNotes", allNotes);  //wrong
-        return "notes";
-    }
+    // Здесь хранится токен авторизации - UserId
+    @Setter
+    @Getter
+    private Long userId;
 
     // Список всех заметок пользователя
-    @GetMapping("/api/v1/reminder/user/{userId}")
-    public String UsersNotesById(@PathVariable Long userId, Model model) {
+    @GetMapping("/api/v1/reminder/notes")
+    public ResponseEntity<List<Note>> UsersNotesById() {
         List<Note> allNotesByUserId = notesService.getAllByUserId(userId);
-        System.out.println(allNotesByUserId);
-        model.addAttribute("allNotes", allNotesByUserId);  //wrong
-        return "notes";
+        return ResponseEntity.ok(allNotesByUserId);
     }
 
+    //Сортировка по name, date, time
+    @GetMapping("/api/v1/sort/{type}")
+    public ResponseEntity<List<Note>> SortNote(@PathVariable String type) {
+        List<Note> allNotesByUserId = notesService.getAllByUserId(userId);
+        List<Note> sortedNotes = new ArrayList<>(allNotesByUserId); // Копируем, чтобы не изменять исходный список
+        switch (type) {
+            case "name":
+                sortedNotes.sort(Comparator.comparing(Note::getTitle));
+                break;
+            case "date":
+                sortedNotes.sort(Comparator.comparing(Note::getRemind));
+                break;
+            case "time":
+                sortedNotes.sort(Comparator.comparing(Note::getRemind));
+                break;
+            default:
+                return ResponseEntity.badRequest().body(Collections.emptyList()); // Ошибка, если неверный тип
+        }
 
-    @GetMapping("/api/v1/sort")
-    public String SortNote() {
-        System.out.println("sort");
-        return "redirect:/api/v1/reminder";
+        return ResponseEntity.ok(sortedNotes);
     }
+/*
+    //Фильтр date, time
+    @GetMapping("/api/v1/filter/{type}")
+    public ResponseEntity<List<Note>> FilterNote(@PathVariable String type) {
+        List<Note> allNotesByUserId = notesService.getAllByUserId(userId);
+        List<Note> filteredNotes = new ArrayList<>(allNotesByUserId); // Копируем, чтобы не изменять исходный список
 
-    @GetMapping("/api/v1/filter")
-    public String FilterNote() {
-        System.out.println("filter");
-        return "redirect:/api/v1/reminder";
-    }
+        return ResponseEntity.ok(filteredNotes);
+    }*/
 
     //Создание новой заметки
-    //TODO Не работает
     @PostMapping("/api/v1/reminder/create")
-    public String CreateNote(@RequestParam String title, @RequestParam String description, @RequestParam Timestamp remind) {
+    public ResponseEntity<String> CreateNote(@RequestParam String title, @RequestParam String description, @RequestParam Timestamp remind) {
         Note note = new Note();
         note.setTitle(title);
         note.setDescription(description);
         note.setRemind(remind);
-        note.setUserId(authController.getUserId());
+        note.setUserId(userId);
         notesService.createNote(note);
-        System.out.println("create");
-        return "redirect:/api/v1/reminder/all";
+        return ResponseEntity.ok("Note successfully created");
     }
 
+    //Удаление заметки по id
     @DeleteMapping("/api/v1/reminder/delete/{id}")
-    public String DeleteNote(@PathVariable Long id) {
+    public ResponseEntity<String> DeleteNote(@PathVariable Long id) {
+        Optional<Note> optionalNote = notesService.getNoteById(id);
+        //Проверяем, существует ли заметка
+        if (optionalNote.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity with ID " + id + " not found");
+        }
+        Note note = optionalNote.get();
+        //Проверяем, принадлежит ли найденная заметка пользователю
+        if (!Objects.equals(userId, note.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can't delete this note");
+        }
+        //Удаляем заметку
         notesService.deleteNote(id);
-        System.out.println("delete");
-        return "redirect:/api/v1/reminder/all";
+        return ResponseEntity.ok("Note " + id + " successfully deleted");
     }
 
-
-    @GetMapping("/api/v1/reminder/update")
-    public String UpdateNote() {
-        System.out.println("update");
-        return "redirect:/api/v1/reminder";
+    //Внесение изменений в заметку по id
+    @PutMapping("/api/v1/reminder/update/{id}")
+    public ResponseEntity<String> UpdateNote(@PathVariable Long id, @RequestParam String title, @RequestParam String description, @RequestParam Timestamp remind) {
+        //Проверяем, существует ли заметка
+        Optional<Note> optionalNote = notesService.getNoteById(id);
+        if (optionalNote.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity with ID " + id + " not found");
+        }
+        Note note = optionalNote.get();
+        //Проверяем, принадлежит ли найденная заметка пользователю
+        if (!Objects.equals(userId, note.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can't edit this note");
+        }
+        //Вставляем в этот объект измененные данные
+        note.setTitle(title);
+        note.setDescription(description);
+        note.setRemind(remind);
+        note.setUserId(userId);
+        //Сохраняем заметку в БД
+        notesService.createNote(note);
+        return ResponseEntity.ok("Note " + id + " successfully edeted");
     }
 
+    //Найти заметку по id
     @GetMapping("/api/v1/reminder/{id}")
-    public String FindNoteByID(@PathVariable int id) {
-        System.out.println("id");
-        return "redirect:/api/v1/reminder";
+    public ResponseEntity<?> FindNoteByID(@PathVariable Long id) {
+        //Проверяем, существует ли заметка
+        Optional<Note> optionalNote = notesService.getNoteById(id);
+        if (optionalNote.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity with ID " + id + " not found");
+        }
+        Note note = optionalNote.get();
+        //Проверяем, принадлежит ли найденная заметка пользователю
+        if (!Objects.equals(userId, note.getUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can't see this note");
+        }
+        return ResponseEntity.ok(note);
     }
 }

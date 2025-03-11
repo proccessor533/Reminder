@@ -1,7 +1,13 @@
 package my.dapi.reminder.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "users")
 public class User {
@@ -21,8 +27,6 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    public User() {}
-
     public User(String username, String password, String telegram, String email) {
         this.username = username;
         this.password = password;
@@ -30,43 +34,4 @@ public class User {
         this.email = email;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getTelegram() {
-        return telegram;
-    }
-
-    public void setTelegram(String telegram) {
-        this.telegram = telegram;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
 }
